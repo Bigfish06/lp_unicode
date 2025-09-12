@@ -4,7 +4,8 @@
     "express": "^5.1.0",
     "mongoose": "^8.18.0",
     "morgan": "^1.10.1",
-    "node": "^22.19.0"
+    "node": "^22.19.0",
+    "resend": "^6.0.3"
   },
   "name": "lp_unicode",
   "version": "1.0.0",
