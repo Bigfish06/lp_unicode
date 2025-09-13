@@ -1,17 +1,18 @@
+require('dotenv').config()
+
 const User=require('../models/user-model')
+const RefreshToken=require('../models/refreshToken-model')
+
 const bcrypt=require('bcrypt')
 const jwt=require('jsonwebtoken')
 const {Resend}=require('resend')
-require('dotenv').config()
 const resend=new Resend(process.env.RESEND_API_KEY)
-
-let refreshTokens=[]
 
 const generateAccessToken=(user)=>{
     return jwt.sign({username:user.username}, process.env.ACCESS_TOKEN_SECRET,{expiresIn:"30s"})
 }
 
-const refresh=(req,res)=>{
+const refresh=async(req,res)=>{
     try {
         const refreshToken=req.body.refreshToken
         if(!refreshToken)
@@ -19,10 +20,19 @@ const refresh=(req,res)=>{
             return res.status(404).json("Please provide refreshToken")
         }
 
-        if(!refreshTokens.includes(refreshToken))        //not in DB
+        //ensures refreshToken is in our DB
+        const RT=await RefreshToken.findOne({token:refreshToken})
+        if(!RT)     
         {
             return res.status(404).json("Invalid refresh token")
         }
+        //ensures user still exists
+        const user=await User.findById(RT.userId)
+        if(!user)     
+        {
+            return res.status(404).json("Invalid refresh token")
+        }
+        //ensures refreshToken wasn't tampered with
         jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET,(err,user)=>{
             if(err)
             {
@@ -39,10 +49,14 @@ const refresh=(req,res)=>{
 const register=async(req,res)=>{
     try {
         const body=req.body
-        if(await User.findOne({username:body.username}))
-        {
-            res.status(404).json({message:"Username already taken"})
-        }
+        
+        //to use validate we have to make a new instance
+        const tempUser=new User({username:body.username, password:body.password, email: body.email})
+        //validate is an important method to check schema input errors
+        //validation error is only for match, minlength(max), required, and for uniqueness(of email or username we have to do it separately)
+       
+        await tempUser.validate()
+
         //a different salt is attached to every password
         //larger the number -> more strong salt -> more time
         //by default its 10 
@@ -51,13 +65,25 @@ const register=async(req,res)=>{
         //another way to do above is:
         //const hashedPassword=await bcrypt.hash(body.password,x(10 by default))
         
-        const user={username:body.username,password:hashedPassword,email:body.email}
-        User.create(user)
-
-        registerEmailer(user.username, user.email)
+        try {
+            const user=await User.create({username:body.username,password:hashedPassword,email:body.email})
+            await registerEmailer(user.username, user.email)
+        } catch (error) {
+            return res.status(400).json({message:`Duplicate entry detected`,data: error.keyValue})
+        }        
 
         res.status(201).json("User successfully created and welcome email sent")
     } catch (error) {
+        if(error.name==="ValidationError")
+        {
+            let messages={}
+            for(let field in error.errors)
+            {
+                messages[field]=error.errors[field].message
+            }
+            return res.status(404).json({message:"Invalid credentials", data: messages})
+        }
+
         res.status(500).json({message:"Failed to register",data:error.message})
     }
 }
@@ -80,7 +106,7 @@ const login=async(req,res)=>{
         //create token
         const accessToken=generateAccessToken(user)
         const refreshToken=jwt.sign({username:user.username}, process.env.REFRESH_TOKEN_SECRET)
-        refreshTokens.push(refreshToken)
+        await RefreshToken.create({token:refreshToken, userId:user._id})
         loginEmailer(user.username,user.email)        
 
         res.status(200).json({message:"Successfully logged in",accessToken:accessToken,refreshToken:refreshToken})
@@ -93,14 +119,29 @@ const showProfile=(req,res)=>{
     res.status(200).json("Welcome "+req.user.username)
 }
 
-const deleteRefreshTokens=(req,res)=>{
-    refreshTokens=refreshTokens.filter(token=>token!==req.body.refreshToken)
-    res.status(200).json("Successfully deleted refresh tokens")
+const deleteRefreshTokens=async(req,res)=>{
+    try {
+        const {refreshToken}=req.params
+        if(!refreshToken)
+        {
+            res.status(404).json("Please provide refresh token")
+        }
+        if(await RefreshToken.findOneAndDelete({token:refreshToken}))
+        {
+            res.status(200).json("Successfully deleted refresh tokens")
+        }
+        else
+        {
+            res.status(404).json("Invalid refresh token")
+        }        
+    } catch (error) {
+        res.status(500).json("Failed to logout user")
+    }    
 }
 
 const registerEmailer=async(username,email)=>{
     await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: process.env.WEBSITE_EMAIL,
     to: email,
     subject: 'Registration done on my website',
     html: `<p>Welcome ${username} to my website. Thank you for registering</p>`
@@ -109,7 +150,7 @@ const registerEmailer=async(username,email)=>{
 
 const loginEmailer=async(username,email)=>{
     await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: process.env.WEBSITE_EMAIL,
     to: email,
     subject: 'Login on my website',
     html: `<p>Hello ${username}! A login was detected on my website, if it was you, please ignore</p>`

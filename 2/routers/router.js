@@ -7,6 +7,6 @@ router.post('/register',register)
 router.post('/login',login)
 router.get('/profile',authenticate,showProfile)
 router.post('/token',refresh)
-router.delete('/logout',deleteRefreshTokens)
+router.delete('/logout/:refreshToken',deleteRefreshTokens)
 
 module.exports=router
