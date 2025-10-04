@@ -1,11 +1,14 @@
 {
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.7.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "mongoose": "^8.18.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.0",
     "morgan": "^1.10.1",
     "node": "^22.19.0",
-    "resend": "^6.0.3"
+    "resend": "^6.1.2"
   },
   "name": "lp_unicode",
   "version": "1.0.0",
