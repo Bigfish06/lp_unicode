@@ -4,8 +4,25 @@ const router=express.Router()
 const {createUser,getUserById,getAllUsers,updateUserEntirely,updateUserPartially,deleteUser}=require('../controllers/controller')
 const {register,login,showProfile,refresh,deleteRefreshTokens}=require('../controllers/controller2')
 const authenticate=require('../middleware/authenticator')
+
 const {createDocument,getDocuments,updateDocument,deleteDocument}=require('../controllers/document-controller')
 const documentAuthorizor=require('../middleware/documentAuthorizor')
+
+const {requestAccess,addUserAccess,approveRequest}=require('../controllers/access-controller')
+router.post('/request-access/:id',authenticate,requestAccess)
+router.post('/add-user-access/:id',authenticate,addUserAccess)
+router.post('/approve-request/:id',authenticate,approveRequest)
+
+
+// keep static routes before dynamic routes
+// here, /document before /:id
+
+// document
+router.post('/document',authenticate,createDocument)
+// middleware
+router.get('/document',authenticate,getDocuments)
+router.patch('/document/:id',authenticate,documentAuthorizor,updateDocument)
+router.delete('/document/:id',authenticate,documentAuthorizor,deleteDocument)
 
 router.post('/',createUser)
 router.get('/:id',getUserById)
@@ -22,12 +39,5 @@ router.get('/profile',authenticate,showProfile)
 router.post('/token',refresh)
 router.delete('/logout/:refreshToken',deleteRefreshTokens)
 
-
-//just fix access of these methods
-router.post('/document',authenticate,createDocument)
-router.get('/document',authenticate,documentAuthorizor,getDocuments)
-
-router.patch('/document/:id',authenticate,documentAuthorizor,updateDocument)
-router.delete('/document/:id',authenticate,documentAuthorizor,deleteDocument)
 
 module.exports=router

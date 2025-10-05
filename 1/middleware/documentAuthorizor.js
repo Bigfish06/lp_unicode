@@ -10,18 +10,21 @@ const authorizeDocument=async(req,res,next)=>{
 
         // req.user was attached by our authenticator middleware
         const userId=req.user._id
+        console.log(req.user)
+        console.log()
+        console.log(userId)
 
-        const {documentId}=req.params
-        const document=await Document.findById(documentId)
+        const {id}=req.params
+        const document=await Document.findById(id)
         if(!document)
         {
-            res.status(404).json("Document not found")
+            return res.status(404).json("Document not found")
         }
-
+        
         // see the use of some
-        const isOwner=document.createdBy===userId
-        const isEditor=document.access.edit.some(uID=>uID===userId)
-        const isViewer=document.access.view.some(uID=>uID===userId)
+        // .equals as we are comparing object and string
+        const isOwner=document.createdBy.equals(userId)
+        const isEditor=document.access.edit.some(uID=>uID.equals(userId))
 
         if(method==="PATCH")
         {
@@ -39,22 +42,14 @@ const authorizeDocument=async(req,res,next)=>{
                 return res.status(403).json("You don't have access to delete this document")
             }
         }
-        else if(method==="GET")
-        {
-            //owner, editor, viewer
-            if(!isOwner&&!isEditor&&!isViewer)
-            {
-                return res.status(403).json("You don't have access to view these documents")
-            }
-        }
         
         // we also attach the document to req for future use
         // so we won't need a find by id again in the controller
         req.document=document
+        next()
     } catch (error) {
         res.status(500).json({data:error.message,message:"Failed to authorize document"})
     }   
-
 }
 
 module.exports=authorizeDocument

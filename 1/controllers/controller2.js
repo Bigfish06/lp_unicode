@@ -9,7 +9,7 @@ const {Resend}=require('resend')
 const resend=new Resend(process.env.RESEND_API_KEY)
 
 const generateAccessToken=(user)=>{
-    return jwt.sign({username:user.username}, process.env.ACCESS_TOKEN_SECRET,{expiresIn:"30s"})
+    return jwt.sign({username:user.username, _id:user._id} ,process.env.ACCESS_TOKEN_SECRET,{expiresIn:"2000s"})
 }
 
 const refresh=async(req,res)=>{
@@ -51,22 +51,34 @@ const register=async(req,res)=>{
         const body=req.body
         
         //to use validate we have to make a new instance
-        const tempUser=new User({username:body.username, password:body.password, email: body.email})
+        const tempUser=new User({username:body.username, password:body.password, email: body.email, dob:body.dob, credit_scores:body.credit_scores, name:body.name})
         //validate is an important method to check schema input errors
         //validation error is only for match, minlength(max), required, and for uniqueness(of email or username we have to do it separately)
-       
+        
         await tempUser.validate()
+
+        // regex for 1 up, 1 dig, 1 special
+        // we do password validation here, as we only store hashed version in the db
+        const passwordRegex=/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).+$/
+        if(!passwordRegex.test(tempUser.password))
+        {
+            return res.status(404).json("Password must contain at least one uppercase letter, one numeric digit, and one special character.")
+        }
+        if(tempUser.password.length<8)
+        {
+            return res.status(404).json("Password must be atleast 8 characters long")
+        }
 
         //a different salt is attached to every password
         //larger the number -> more strong salt -> more time
         //by default its 10 
-        const salt=await bcrypt.genSalt();
+        const salt=await bcrypt.genSalt(); 
         const hashedPassword=await bcrypt.hash(body.password,salt)
         //another way to do above is:
         //const hashedPassword=await bcrypt.hash(body.password,x(10 by default))
         
         try {
-            const user=await User.create({username:body.username,password:hashedPassword,email:body.email})
+            const user=await User.create({username:body.username, password:hashedPassword, email: body.email, dob:body.dob, credit_scores:body.credit_scores, name:body.name})
             await registerEmailer(user.username, user.email)
         } catch (error) {
             return res.status(400).json({message:`Duplicate entry detected`,data: error.keyValue})
@@ -97,15 +109,15 @@ const login=async(req,res)=>{
             return res.status(404).json("Username not found")
         }
 
-        //first hashed one of DB, then input
+        //first input, then hashed in DB
         if(!await bcrypt.compare(body.password,user.password))
-        {
+        {            
             return res.status(404).json("Incorrect password")
         }
 
         //create token
         const accessToken=generateAccessToken(user)
-        const refreshToken=jwt.sign({username:user.username}, process.env.REFRESH_TOKEN_SECRET)
+        const refreshToken=jwt.sign({username:user.username, _id:user._id}, process.env.REFRESH_TOKEN_SECRET)
         await RefreshToken.create({token:refreshToken, userId:user._id})
         loginEmailer(user.username,user.email)        
 
