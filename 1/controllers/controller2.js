@@ -118,7 +118,8 @@ const login=async(req,res)=>{
         //create token
         const accessToken=generateAccessToken(user)
         const refreshToken=jwt.sign({username:user.username, _id:user._id}, process.env.REFRESH_TOKEN_SECRET)
-        await RefreshToken.create({token:refreshToken, userId:user._id})
+        // we use foau, instead of create, cuz we allow user to login multiple times
+        await RefreshToken.findOneAndUpdate({userId:user._id},{token:refreshToken},{new:true})
         loginEmailer(user.username,user.email)        
 
         res.status(200).json({message:"Successfully logged in",accessToken:accessToken,refreshToken:refreshToken})

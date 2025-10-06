@@ -2,6 +2,7 @@ const express=require('express')
 const app=express()
 const mongoose=require("mongoose")
 const morgan=require('morgan')
+
 require('dotenv').config()
 
 const address=process.env.mongoDB_url
@@ -12,6 +13,8 @@ mongoose.connect(address)
 .catch(()=>{
     console.log('Connection to the database failed')
 })
+
+
 
 app.listen(5000,()=>{
     console.log('Server is listening on port 5000')

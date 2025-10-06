@@ -8,6 +8,10 @@ const authenticate=require('../middleware/authenticator')
 const {createDocument,getDocuments,updateDocument,deleteDocument}=require('../controllers/document-controller')
 const documentAuthorizor=require('../middleware/documentAuthorizor')
 
+const uploader=require('../middleware/multer')
+const uploadProfileIcon=require('../controllers/cloudinary-controller')
+router.post('/upload-profile-icon',authenticate,uploader.single('profileIcon'),uploadProfileIcon)
+
 const {requestAccess,addUserAccess,approveRequest}=require('../controllers/access-controller')
 router.post('/request-access/:id',authenticate,requestAccess)
 router.post('/add-user-access/:id',authenticate,addUserAccess)
