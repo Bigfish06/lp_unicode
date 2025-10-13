@@ -1,10 +1,11 @@
 const jwt=require('jsonwebtoken')
 
-//middleware verifies the token
+//this middleware verifies the access token
 const authenticateToken=(req,res,next)=>{
-    //JWT has 3 parts, headers, payload, signature
-    //in req we receive, Authorization: Bearer <token>
+    //JWT has 3 parts: headers, payload, signature
+    //we receive from, Authorization: Bearer <token> in request
     const authHeader=req.headers['authorization']    
+    //splits str into arr on seeing ' '. So [0]: Bearer and [1]: token
     const token=authHeader&&authHeader.split(' ')[1]
     if(!token)
     {
@@ -18,7 +19,8 @@ const authenticateToken=(req,res,next)=>{
             //we see that you have a token, but is no longer valid
             return res.status(403).json("Token is invalid")
         }
-        //attach decoded payload to req
+        // Add the decoded data from the token to req
+        // This data (username and _id) is what we originally put inside the token using jwt.sign()
         req.user=user
         next()
     })

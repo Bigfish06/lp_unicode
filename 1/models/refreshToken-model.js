@@ -5,6 +5,7 @@ const refreshTokenSchema=new mongoose.Schema({
     //userId is a reference to _id of User
     userId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
         required: true,
         unique: true
     },

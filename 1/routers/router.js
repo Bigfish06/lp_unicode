@@ -1,8 +1,8 @@
 const express=require('express')
 const router=express.Router()
 
-const {createUser,getUserById,getAllUsers,updateUserEntirely,updateUserPartially,deleteUser}=require('../controllers/controller')
-const {register,login,showProfile,refresh,deleteRefreshTokens}=require('../controllers/controller2')
+const {createUser,getUserById,getAllUsers,updateUserEntirely,updateUserPartially,deleteUser}=require('../controllers/user-controller')
+const {register,login,showProfile,refresh,deleteRefreshTokens}=require('../controllers/authenticator')
 const authenticate=require('../middleware/authenticator')
 
 const {createDocument,getDocuments,updateDocument,deleteDocument}=require('../controllers/document-controller')
@@ -10,6 +10,7 @@ const documentAuthorizor=require('../middleware/documentAuthorizor')
 
 const uploader=require('../middleware/multer')
 const uploadProfileIcon=require('../controllers/cloudinary-controller')
+// note
 router.post('/upload-profile-icon',authenticate,uploader.single('profileIcon'),uploadProfileIcon)
 
 const {requestAccess,addUserAccess,approveRequest}=require('../controllers/access-controller')

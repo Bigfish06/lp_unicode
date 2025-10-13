@@ -10,7 +10,9 @@ const createDocument=async(req,res)=>{
     }
 }
 
-//next 3 methods have the documentAuthorizer middleware before
+//next 3 methods have the documentAuthorizer middleware before, which attached req.document
+// however, if we are using req.document, we have to make sure we do await req.document.save()
+// after every change, so i choose not to for document, otherwise for req.user it won't have changes
 const getDocuments=async(req,res)=>{
     try {
         const allDocuments=await Document.find({})

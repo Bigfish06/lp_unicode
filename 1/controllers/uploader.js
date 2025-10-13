@@ -22,10 +22,11 @@ const uploadOnCloudinary=async(localFilePath)=>{
         })
 
         return file
-    } catch (error) {
-        // if we are not able to upload, we have to still remove it from local
-        fs.unlinkSync(localFilePath)
+    } catch (error) {        
         throw error
+    } finally{
+        // remove it from local
+        if(!fs.existsSync(localFilePath))fs.unlinkSync(localFilePath)
     }
 }
 

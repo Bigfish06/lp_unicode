@@ -2,8 +2,8 @@ const Document=require('../models/document-model')
 
 const authorizeDocument=async(req,res,next)=>{
     try {
-        //as we are using one authorize method for multiple requests, 
-        //we must know which requests called
+        //as different methods require different levels of authority,
+        //we must know which method called
         // we do so using req.method
         // if method type is same then we can use req.params or req.originalUrl
         const method=req.method

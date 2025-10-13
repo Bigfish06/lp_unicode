@@ -19,7 +19,7 @@ const documentSchema = new mongoose.Schema(
     }, 
 
     access:{
-        // array
+        // view arr and edit arr
         view: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
