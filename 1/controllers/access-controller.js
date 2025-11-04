@@ -1,4 +1,6 @@
 const Document=require('../models/document-model')
+const {Resend}=require('resend')
+const resend=new Resend(process.env.RESEND_API_KEY)
 
 const requestAccess=async(req,res)=>{
     try {
@@ -8,18 +10,43 @@ const requestAccess=async(req,res)=>{
         const user=req.user 
         
         // see how we push another object to requests array
-        const updatedDocument=await Document.findByIdAndUpdate(id, {
+        const updatedDocument=await (Document.findByIdAndUpdate(id, {
             $push: {requests:{user: user._id, type:type}}
         },{new:true})
+
+        // When a user requests access, 'createdBy' only stores the owner's ObjectId.
+        // We use populate() to fetch the owner's full details (like name and email) 
+        // from the User collection using that ObjectId reference.
+        .populate("createdBy", "name email"))
+
         if(!updatedDocument)
         {
             return res.status(404).json("Document to which you requested access was not found")
+        }
+        else
+        {
+            // successful
+            // email notification to the owner
+            await requestAccessEmailer(user, updatedDocument,type)
         }
 
         res.status(200).json({message: "Requested access ",updatedDocument})
     } catch (error) {
         res.status(500).json({data: error.message, message: "Failed to request access"})
     }
+}
+
+const requestAccessEmailer=async(requestingUser,document,type)=>{
+    await resend.emails.send({
+    from: process.env.WEBSITE_EMAIL,
+    to: document.createdBy.email,
+    subject: `Someone wants to view your document`,
+    html: 
+    `<p>
+    ${requestingUser.name} (username: ${requestingUser.username}) has requested ${type} access to your document: ${document.title}. 
+    To contact them, here's their email ${requestingUser.email}.
+    </p>`
+    });
 }
 
 const approveRequest=async(req,res)=>{
