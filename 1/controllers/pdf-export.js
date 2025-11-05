@@ -47,4 +47,4 @@ const exportPDF=async(req,res)=>{
     
 }
 
-module.exports=exportPDF
+module.exports={exportPDF}

@@ -18,6 +18,9 @@ router.post('/request-access/:id',authenticate,requestAccess)
 router.post('/add-user-access/:id',authenticate,addUserAccess)
 router.post('/approve-request/:id',authenticate,approveRequest)
 
+const {viewDocumentHistory,restorePreviousVersion,compareVersions}=require('../controllers/document-controller')
+const {exportPDF}=require('../controllers/pdf-export')
+
 
 // keep static routes before dynamic routes
 // here, /document before /:id
@@ -44,5 +47,10 @@ router.get('/profile',authenticate,showProfile)
 router.post('/token',refresh)
 router.delete('/logout/:refreshToken',deleteRefreshTokens)
 
+router.get('/view-history/:id',authenticate,viewDocumentHistory)
+router.patch('/restore-history/:id/:versionNumber',authenticate,documentAuthorizor,restorePreviousVersion)
+router.get('/compare-history/:id/:versionNumber1/:versionNumber2',authenticate,compareVersions)
+
+router.get('/export-document/:id',authenticate,exportPDF)
 
 module.exports=router

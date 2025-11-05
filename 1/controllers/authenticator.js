@@ -9,7 +9,7 @@ const {Resend}=require('resend')
 const resend=new Resend(process.env.RESEND_API_KEY)
 
 const generateAccessToken=(user)=>{
-    return jwt.sign({username:user.username, _id:user._id} ,process.env.ACCESS_TOKEN_SECRET,{expiresIn:"2000s"})
+    return jwt.sign({username:user.username, _id:user._id} ,process.env.ACCESS_TOKEN_SECRET,{expiresIn:"20000s"})
 }
 
 const refresh=async(req,res)=>{

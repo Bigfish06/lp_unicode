@@ -33,7 +33,7 @@ const updateDocument=async(req,res)=>{
 
         // save this version before the update
         // but before this, we need to calculate versionNumber
-        const currentDocument = await Document.findById(id,{new :true})
+        const currentDocument = await Document.findById(id)
 
         const versionCount = await DocumentVersion.countDocuments({documentID:id})
         await DocumentVersion.create({
@@ -47,7 +47,7 @@ const updateDocument=async(req,res)=>{
         const updatedDocument=await Document.findByIdAndUpdate(id, document,{new:true})
         res.status(200).json(updatedDocument)
     } catch (error) {
-        res.status(500).json({data:error.message,message:"Failed to updated document"})
+        res.status(500).json({data:error.message,message:"Failed to update document"})
     }
 }
 
@@ -65,7 +65,7 @@ const viewDocumentHistory=async(req,res)=>{
     try {
         const {id}=req.params
         const allDocuments=await DocumentVersion.find({documentID:id})
-        .sort({versionNumber:-1})       // sort in ascending order
+        .sort({versionNumber:-1})       // sort in descending order
         res.status(200).json(allDocuments)
     } catch (error) {
         res.status(500).json({data:error.message,message:"Failed to view document history"})
@@ -75,7 +75,7 @@ const viewDocumentHistory=async(req,res)=>{
 const restorePreviousVersion=async(req,res)=>{
     try {
         const {id, versionNumber}=req.params
-        const document=req.body
+        const document=req.document
         
         const restoredVersion=await DocumentVersion.findOne({documentID:id, versionNumber:versionNumber})
         if(!restoredVersion)
@@ -123,4 +123,4 @@ const compareVersions=async(req,res)=>{
     }
 }
 
-module.exports={createDocument,getDocuments,updateDocument,deleteDocument}
+module.exports={createDocument,getDocuments,updateDocument,deleteDocument,viewDocumentHistory,restorePreviousVersion,compareVersions}
